@@ -9,9 +9,9 @@
 #define CMD_LENGTH 50
 #define DIR_LENGTH 200
 
-char input[CMD_LENGTH], prompt[DIR_LENGTH];
+char prompt[DIR_LENGTH];
 
-char *command, *cmd_args;
+char *command, **cmd_args;
 char has_args;
 
 char *work_dir, *base_dir;
@@ -20,7 +20,7 @@ char *work_dir, *base_dir;
 void cd_routine();
 void wait_routine();
 void prog_routine();
-
+char* tokenize(char *inputString, char** args);
 
 int main(void)
 {
@@ -28,6 +28,7 @@ int main(void)
 	strcpy(prompt,".");
 	
 	command = malloc(sizeof(char)*CMD_LENGTH);
+	cmd_args = malloc(sizeof(char*)*10);
 	has_args = 0;
 
 	work_dir = malloc(sizeof(char)*DIR_LENGTH);
@@ -37,10 +38,17 @@ int main(void)
 	while (1) {
 		// Kommando holen
 		printf("%s> ", prompt);
-		fgets(input, CMD_LENGTH, stdin); // Wozu der Umweg ueber input?
-		command = input;
+		fgets(command, CMD_LENGTH, stdin);
 		command[strlen(command)-1] = '\0';
 
+		command = tokenize(command,cmd_args);
+		printf("[DEBUG_Joe] Command: %s\n", command);
+		char** tmp = cmd_args;
+		while (*cmd_args != NULL) {
+			printf("[DEBUG_Joe] Argument: %s\n", *cmd_args++);
+		}
+		cmd_args = tmp;
+/*
 		// Kommando von eventuellen Parametern trennen
 		if ((cmd_args = strchr(command, ' ')) != NULL) {
 			// String hat Leerzeichen
@@ -51,10 +59,12 @@ int main(void)
 		} else {
 			has_args = 0;
 		}
-
+*/
 		// Kommando behandeln
-		
-		if (!strcmp(command, "cd")) {
+		if (!strcmp(command, "")) {
+			continue;
+		}
+		else if (!strcmp(command, "cd")) {
 			cd_routine();
 		}
 		else if (!strcmp(command, "wait")) {
@@ -69,10 +79,58 @@ int main(void)
 	}
 }
 
+/**
+ * Zerlegt einen Leerzeichen getrennten Eingabestring in das Kommando und die Argumente.
+ *
+ * Parameter:
+ * command - Eingabestring
+ * args* - Pointer auf ein String-Array
+ *
+ * Output:
+ * return - Pointer zum Command-String
+ * args* - NULL-Terminierte Liste von Argumenten
+ */
+char* tokenize(char *inputString, char** args) {
+	char* cmd;
+	char* tokenp;
+	if  (inputString == NULL || args == NULL) {
+		return NULL;
+	}
+	if ((tokenp = strchr(inputString,' ')) != NULL) {	//Prüfen ob Leerzeichen im Eingabestring
+		*tokenp = '\0'; 								//Wenn ja, Leerzeichen durch Stringterminierung ersetzen
+		cmd = malloc(sizeof(char)*strlen(inputString));	//Speicher allozieren und
+		strcpy(cmd, inputString);						//String reinschreiben
+		inputString = tokenp+1;							//Im Inputstring an die nächste Stelle springen
+		//Solange Leerzeichen vorhanden sind, an diesen Trennen und getrennt in das Array speichern
+		while ((tokenp = strchr(inputString,' ')) != NULL) {
+			*tokenp = '\0';
+			*args = malloc(sizeof(char)*strlen(inputString));
+			strcpy(*args, inputString);
+			//Im Args Array eine Position weiter springen
+			args++;
+			inputString = tokenp+1;
+		}
+		//Argument nach dem Letzten Leerzeichen verarbeiten, wenn nicht leer.
+		if (strlen(inputString) > 0) {
+			*args = malloc(sizeof(char) * strlen(inputString));
+			strcpy(*args, inputString);
+			args++;
+		}
+	}
+	// Wenn kein Leerzeichen vorhanden, dann einfach Commando Speichern
+	else {
+		cmd = malloc(sizeof(char)*strlen(inputString));
+		strcpy(cmd, inputString);
+	}
+	// Args Array mit NULL terminieren
+	*args = NULL;
+	return cmd;
+}
+
 void cd_routine() {
-	if (has_args) {
+	if (*cmd_args != NULL) {
 		// Pfad wurde uebergeben
-		if (!chdir(cmd_args)) {
+		if (!chdir(*cmd_args)) {
 			// erstmal wechseln und dann prompt zusammenbasteln
 			getcwd(work_dir, DIR_LENGTH);
 
