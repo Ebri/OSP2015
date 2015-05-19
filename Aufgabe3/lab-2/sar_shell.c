@@ -40,7 +40,6 @@ int main(void)
 		fgets(input, CMD_LENGTH, stdin); // Wozu der Umweg ueber input?
 		command = input;
 		command[strlen(command)-1] = '\0';
-		printf("Command: %s\n", command);
 
 		// Kommando von eventuellen Parametern trennen
 		if ((cmd_args = strchr(command, ' ')) != NULL) {
@@ -113,10 +112,13 @@ void prog_routine() {
 		// wir sind der Child-Prozess
 		printf("Child: %s\n", command);
 
-		// hier muesste jetzt sowas wie exec kommen
-		// was den eigentlichen befehl ausfuehrt
-
-		exit(0);
+		int ret;
+		if (has_args) {
+			ret = execl(command, command, cmd_args, (char *) 0);
+		} else {
+			ret = execl(command, command, (char *) 0);
+		}
+		exit(ret);
 	} else if (pid < 0) {
 		// fork failed
 		printf("Fork failed");
