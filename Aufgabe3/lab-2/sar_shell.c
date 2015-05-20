@@ -10,17 +10,19 @@
 #define DIR_LENGTH 200
 
 char prompt[DIR_LENGTH];
-
-char *command, **cmd_args;
-char has_args;
-
 char *work_dir, *base_dir;
 
+char *command, **cmd_args;
+
+char has_args;
+
+pid_t known_pids[9];
 
 void cd_routine();
 void wait_routine();
 void prog_routine();
 char* tokenize(char *inputString, char** args);
+pid_t search_pid(pid_t pid);
 
 int main(void)
 {
@@ -77,6 +79,20 @@ int main(void)
 			prog_routine();
 		}		
 	}
+}
+
+/**
+ * Sucht aus der Liste der known_pids die angefragte.
+ *
+ * return pid_t - wenn gefunden, 0 sonst
+ */
+pid_t search_pid(pid_t pid) {
+	int i;
+	for (i = 0; i < 8; i++) {
+		if (pid == known_pids[i])
+			return pid;
+	}
+	return 0;
 }
 
 /**
@@ -158,7 +174,8 @@ void cd_routine() {
 }
 
 void wait_routine() {
-	// ...
+	// TODO: wait auf pids aus Argumenten
+	// TODO: wait auf erste pid wenn kein Argument übergeben???
 }
 
 void prog_routine() {
